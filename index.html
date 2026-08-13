@@ -338,10 +338,6 @@
 
                     <!-- FORM GIÁO VIÊN -->
                     <form id="teacherLoginForm" class="login-form" style="display: none;" onsubmit="handleTeacherLogin(event)">
-                        <div class="alert alert-info">
-                            <i class="fa-solid fa-user-shield"></i>
-                            <strong>Đăng nhập Giáo viên:</strong> Nhập Email và Mật khẩu của Giáo viên chủ nhiệm để quản lý lớp học.
-                        </div>
                         <div class="form-group mb-3">
                             <label for="teacherEmail"><i class="fa-solid fa-envelope"></i> Email Giáo viên:</label>
                             <input type="email" id="teacherEmail" class="form-control" placeholder="gvcn.anphu@gmail.com" value="gvcn.anphu@gmail.com" required>
@@ -622,8 +618,7 @@
     </footer>
 
     <div id="toastContainer" class="toast-container"></div>
-
-    <!-- MAIN JAVASCRIPT LOGIC -->
+<!-- MAIN JAVASCRIPT LOGIC -->
     <script>
         // LIST DÂN TỘC VIỆT NAM FULL
         const DANH_SACH_DAN_TOC = [
@@ -720,7 +715,7 @@
             // NHÓM E. THÔNG TIN MẸ
             { id: "f068", label: "64. Tên mẹ", excelHeader: "Tên mẹ", permission: "PH-NHAP", inputType: "text", group: "NHÓM E. THÔNG TIN MẸ" },
             { id: "f069", label: "Trình độ học vấn của mẹ", excelHeader: "Trình độ học vấn của mẹ", permission: "PH-NHAP", inputType: "combobox", options: ["Lớp 5", "Lớp 9", "Lớp 12", "Tiểu học", "THCS", "THPT", "Trung cấp", "Cao đẳng", "Đại học", "Sau đại học"], group: "NHÓM E. THÔNG TIN MẸ" },
-            { id: "f070", label: "66. N.Nghiệp mẹ", excelHeader: "N.Nghiệp mẹ", permission: "PH-NHAP", inputType: "text", group: "NHÓM E. THÔNG TIN MẸ" },
+            { id: "f070", label: "65. N.Nghiệp mẹ", excelHeader: "N.Nghiệp mẹ", permission: "PH-NHAP", inputType: "text", group: "NHÓM E. THÔNG TIN MẸ" },
             { id: "f071", label: "66. Năm sinh mẹ", excelHeader: "Năm sinh mẹ", permission: "PH-NHAP", inputType: "text", group: "NHÓM E. THÔNG TIN MẸ" },
             { id: "f114", label: "67. Số điện thoại mẹ", excelHeader: "Số điện thoại mẹ", permission: "PH-NHAP", inputType: "text", group: "NHÓM E. THÔNG TIN MẸ" },
             { id: "f092", label: "68. Không có CCCD/CMND/ĐDCN mẹ", excelHeader: "Không có CCCD/CMND/ĐDCN mẹ", permission: "PH-CHECKBOX", inputType: "checkbox", group: "NHÓM E. THÔNG TIN MẸ" },
@@ -772,8 +767,9 @@
         // HÀM CHUẨN HÓA VÀ KIỂM TRA ĐỊNH DẠNG NGÀY THÁNG DD/MM/YYYY
         // =========================================================
 
+        // Hàm kiểm tra ngày hợp lệ thực tế
         function isValidDateDDMMYYYY(dateStr) {
-            if (!dateStr) return true;
+            if (!dateStr) return true; // Trống được chấp nhận
             if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return false;
 
             const parts = dateStr.split("/");
@@ -790,6 +786,7 @@
             return true;
         }
 
+        // Tự động định dạng khi người dùng gõ vào ô text ngày (thêm dấu /)
         function formatDateInput(input) {
             let v = input.value.replace(/\D/g, '');
             if (v.length > 8) v = v.substring(0, 8);
@@ -812,9 +809,11 @@
             }
         }
 
+        // Hàm Chuẩn hóa MỌI kiểu Ngày về duy nhất DD/MM/YYYY
         function normalizeDateForUser(val) {
             if (val === null || val === undefined || val === '') return '';
 
+            // Nếu val là đối tượng Date
             if (val instanceof Date) {
                 if (isNaN(val.getTime())) return '';
                 const d = String(val.getDate()).padStart(2, '0');
@@ -823,6 +822,7 @@
                 return `${d}/${m}/${y}`;
             }
 
+            // Nếu val là Excel Serial Number (vd: 42626)
             if (typeof val === 'number' || (!isNaN(val) && !String(val).includes('-') && !String(val).includes('/'))) {
                 const num = Number(val);
                 if (num > 10000 && num < 100000) {
@@ -839,10 +839,12 @@
             let s = String(val).trim();
             if (!s) return '';
 
+            // Trường hợp ISO String dạng YYYY-MM-DD...
             if (s.includes('T')) {
                 s = s.split('T')[0];
             }
 
+            // Dạng YYYY-MM-DD hoặc YYYY/MM/DD
             if (/^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}$/.test(s)) {
                 const parts = s.split(/[-\/]/);
                 const y = parts[0];
@@ -851,6 +853,7 @@
                 return `${d}/${m}/${y}`;
             }
 
+            // Dạng DD-MM-YYYY hoặc DD/MM/YYYY
             if (/^\d{1,2}[-\/]\d{1,2}[-\/]\d{4}$/.test(s)) {
                 const parts = s.split(/[-\/]/);
                 const d = parts[0].padStart(2, '0');
@@ -862,6 +865,7 @@
             return s;
         }
 
+        // Tạo đối tượng Date an toàn từ DD/MM/YYYY cho ExcelJS
         function parseDDMMYYYYToDate(dateStr) {
             if (!isValidDateDDMMYYYY(dateStr)) return null;
             const parts = dateStr.split('/');
@@ -877,6 +881,7 @@
             renderAccordionFormSchema();
         });
 
+        // TẠO DỮ LIỆU MẪU BAN ĐẦU NẾU LOCALSTORAGE RỖNG
         function initMockDataIfEmpty() {
             if (!localStorage.getItem('DB_STUDENTS')) {
                 const sampleStudents = [
@@ -930,6 +935,7 @@
             document.getElementById('navUserAvatar').src = savedSettings.avatarUrl;
         }
 
+        // RENDER GIAO DIỆN HỒ SƠ THEO SCHEMA PARENT_EXCEL_SCHEMA
         function renderAccordionFormSchema() {
             const container = document.getElementById('accordionGroups');
             if (!container) return;
@@ -1033,6 +1039,7 @@
                         });
                         groupDiv.appendChild(datalist);
                     } else if (field.inputType === 'date') {
+                        // CHUYỂN TOÀN BỘ SANG INPUT TEXT ĐỂ HIỂN THỊ CHẮC CHẮN DD/MM/YYYY
                         inputEl = document.createElement('input');
                         inputEl.type = 'text';
                         inputEl.className = 'form-control';
@@ -1115,6 +1122,7 @@
             setTimeout(() => toast.remove(), 3500);
         }
 
+        // HÀM CHUYỂN NGÀY THÁNG BẤT KỲ VỀ MẬT KHẨU PHÙ HỢP DDMMYYYY
         function convertToDDMMYYYY(dobStr) {
             if (!dobStr) return "";
             const norm = normalizeDateForUser(dobStr);
@@ -1122,38 +1130,27 @@
             return cleanStr;
         }
 
-        // =========================================================
-        // XỬ LÝ ĐĂNG NHẬP PHỤ HUYNH & GIÁO VIÊN (ĐÃ KHẮC PHỤC SỰ CỐ)
-        // =========================================================
-
+        // HÀM ĐĂNG NHẬP PHỤ HUYNH
         function handleParentLogin(e) {
             e.preventDefault();
-            const username = document.getElementById('parentUsername').value.trim().replace(/[\s\-\,\.]/g, "");
-            const passInput = document.getElementById('parentPassword').value.trim().replace(/\D/g, "");
+            const username = document.getElementById('parentUsername').value.trim();
+            const passInput = document.getElementById('parentPassword').value.trim();
 
             const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
 
-            // Tìm học sinh dựa vào CCCD (f043), Mã định danh (f002), Mã cá nhân (f112), hoặc Thứ tự (f001)
-            const student = students.find(s => {
-                const cccd = (s.f043 || '').toString().trim().replace(/[\s\-\,\.]/g, "");
-                const mdd = (s.f002 || '').toString().trim().replace(/[\s\-\,\.]/g, "");
-                const ddcn = (s.f112 || '').toString().trim().replace(/[\s\-\,\.]/g, "");
-                const stt = (s.f001 || '').toString().trim();
-
-                return (cccd && cccd === username) || 
-                       (mdd && mdd === username) || 
-                       (ddcn && ddcn === username) ||
-                       (stt && stt === username);
-            });
+            const student = students.find(s => 
+                (s.f043 && s.f043.trim() === username) || 
+                (s.f002 && s.f002.trim() === username)
+            );
 
             if (!student) {
-                showToast("Không tìm thấy học sinh với Mã/CCCD này trong danh sách!", "error");
+                showToast("Không tìm thấy học sinh với Mã/CCCD này!", "error");
                 return;
             }
 
             const expectedPass = convertToDDMMYYYY(student.f004);
             if (passInput !== expectedPass) {
-                showToast(`Mật khẩu ngày sinh (DDMMYYYY) không đúng! (Gợi ý: Dạng DDMMYYYY của ${normalizeDateForUser(student.f004)})`, "error");
+                showToast("Mật khẩu ngày sinh (DDMMYYYY) không đúng!", "error");
                 return;
             }
 
@@ -1166,33 +1163,27 @@
             openEditModal(student);
         }
 
+        function openCurrentParentModal() {
+            if (currentUser && currentUser.studentData) {
+                openEditModal(currentUser.studentData);
+            }
+        }
+
+        // HÀM ĐĂNG NHẬP GIÁO VIÊN
         function handleTeacherLogin(e) {
             e.preventDefault();
             const email = document.getElementById('teacherEmail').value.trim();
             const pass = document.getElementById('teacherPassword').value.trim();
 
-            if (!email || !pass) {
-                showToast("Vui lòng nhập đầy đủ Email và Mật khẩu!", "warning");
-                return;
-            }
+            const savedSettings = JSON.parse(localStorage.getItem('DB_SYSTEM_SETTINGS') || JSON.stringify(DEFAULT_SETTINGS));
 
-            let savedSettings = JSON.parse(localStorage.getItem('DB_SYSTEM_SETTINGS') || JSON.stringify(DEFAULT_SETTINGS));
-
-            // Đăng nhập thành công với thông tin Giáo viên
-            currentUser = { 
-                role: 'teacher', 
-                name: savedSettings.teacherName || "Giáo viên chủ nhiệm",
-                email: email
-            };
-
-            showToast("Đăng nhập Giáo viên thành công!", "success");
-            enterDashboard();
-            loadTeacherDashboard();
-        }
-
-        function openCurrentParentModal() {
-            if (currentUser && currentUser.studentData) {
-                openEditModal(currentUser.studentData);
+            if (email && pass) {
+                currentUser = { role: 'teacher', name: savedSettings.teacherName };
+                showToast("Đăng nhập Giáo viên thành công!", "success");
+                enterDashboard();
+                loadTeacherDashboard();
+            } else {
+                showToast("Vui lòng điền Email và Mật khẩu!", "warning");
             }
         }
 
@@ -1218,6 +1209,7 @@
             showToast("Đã đăng xuất khỏi hệ thống.", "info");
         }
 
+        // MỞ VÀ ĐỔ DỮ LIỆU VÀO FORM CHỈNH SỬA
         function openEditModal(studentObj) {
             currentStudentData = JSON.parse(JSON.stringify(studentObj));
             originalStudentBackup = JSON.parse(JSON.stringify(studentObj));
@@ -1242,6 +1234,7 @@
                 statusBadge.innerText = 'CHƯA KIỂM TRA';
             }
 
+            // Phân quyền input theo role
             PARENT_EXCEL_SCHEMA.forEach(field => {
                 const inputEl = document.getElementById(field.id);
                 const labelEl = document.getElementById(`label-${field.id}`);
@@ -1325,9 +1318,11 @@
             });
         }
 
+        // LƯU CẬP NHẬT VÀ GHI AUDIT LOGS
         function saveStudentFormData() {
             if (!currentStudentData) return;
 
+            // Validation kiểm tra lỗi định dạng ngày
             let hasDateError = false;
             PARENT_EXCEL_SCHEMA.filter(f => f.inputType === 'date').forEach(f => {
                 const inputEl = document.getElementById(f.id);
@@ -1396,87 +1391,386 @@
             if (currentUser.role === 'teacher') loadTeacherDashboard();
         }
 
-      function restoreOriginalStudentData() {
+        // GIÁO VIÊN KHÔI PHỤC DỮ LIỆU GỐC
+        function restoreOriginalStudentData() {
             if (!confirm("Bạn có chắc muốn khôi phục dữ liệu gốc?\nTất cả thay đổi của PH sẽ bị hủy.")) return;
 
-            if (!originalStudentBackup) return;
-
-            originalStudentBackup._modifiedFields = [];
-            originalStudentBackup._status = 'CONFIRMED';
-
             const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
-            const idx = students.findIndex(s => (s.f001 && s.f001 === originalStudentBackup.f001) || (s.f002 && s.f002 === originalStudentBackup.f002));
+            const idx = students.findIndex(s => (s.f001 && s.f001 === currentStudentData.f001) || (s.f002 && s.f002 === currentStudentData.f002));
+            
             if (idx !== -1) {
-                students[idx] = originalStudentBackup;
+                students[idx]._modifiedFields = [];
+                students[idx]._status = 'PENDING';
                 localStorage.setItem('DB_STUDENTS', JSON.stringify(students));
+                showToast("Đã khôi phục dữ liệu gốc của học sinh!", "info");
+                openEditModal(students[idx]);
+                loadTeacherDashboard();
             }
-
-            showToast("Đã khôi phục dữ liệu gốc thành công!", "info");
-            openEditModal(originalStudentBackup);
-            if (currentUser && currentUser.role === 'teacher') loadTeacherDashboard();
         }
-
-        // =========================================================
-        // BỔ SUNG CÁC HÀM CÒN THIẾU CHO DASHBOARD
-        // =========================================================
 
         function loadTeacherDashboard() {
-            const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
-            allStudentsList = students;
-
-            const totalCountEl = document.getElementById('totalStudentsCount');
-            if (totalCountEl) totalCountEl.innerText = students.length;
+            allStudentsList = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
 
             const selectEl = document.getElementById('teacherStudentSelect');
-            if (selectEl) {
-                selectEl.innerHTML = '<option value="">-- Chọn học sinh từ danh sách --</option>';
-                students.forEach(s => {
-                    const opt = document.createElement('option');
-                    opt.value = s.f002 || s.f001;
-                    opt.innerText = `${s.f001 || ''}. ${s.f003} (${s.f002 || 'Chưa có MĐĐ'})`;
-                    selectEl.appendChild(opt);
-                });
-            }
+            if (selectEl) selectEl.innerHTML = '<option value="">-- Chọn học sinh từ danh sách --</option>';
 
-            renderTeacherStudentTable();
-            populateHistoryStudentFilterOptions();
+            const tableBody = document.getElementById('teacherStudentTableBody');
+            if (tableBody) tableBody.innerHTML = '';
+
+            document.getElementById('totalStudentsCount').innerText = allStudentsList.length;
+
+            allStudentsList.forEach((s, index) => {
+                const studentId = s.f001 || s.f002 || (index + 1).toString();
+                
+                if (selectEl) {
+                    const opt = document.createElement('option');
+                    opt.value = studentId;
+                    opt.innerText = `${s.f002 || '---'} - ${s.f003 || 'Không tên'}`;
+                    selectEl.appendChild(opt);
+                }
+
+                if (tableBody) {
+                    const tr = document.createElement('tr');
+                    const modifiedCount = (s._modifiedFields || []).length;
+                    let statusHtml = '<span class="badge badge-info">Chưa xác nhận</span>';
+                    if (s._status === 'CONFIRMED') statusHtml = '<span class="badge badge-primary">Đã xác nhận</span>';
+                    if (modifiedCount > 0) statusHtml = '<span class="badge" style="background:#fce8e6; color:#c5221f;">Có chỉnh sửa</span>';
+
+                    tr.innerHTML = `
+                        <td><strong>${index + 1}</strong></td>
+                        <td><strong>${s.f002 || '---'}</strong></td>
+                        <td>${s.f043 || '---'}</td>
+                        <td>${s.f003 || '---'}</td>
+                        <td>${normalizeDateForUser(s.f004) || '---'}</td>
+                        <td>${s.f008 || '---'}</td>
+                        <td>${statusHtml}</td>
+                        <td><strong class="text-danger">${modifiedCount}</strong> trường</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="teacherSelectStudentDirect('${studentId}')">
+                                <i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                }
+            });
         }
 
-        function renderTeacherStudentTable() {
-            const tbody = document.getElementById('teacherStudentTableBody');
-            if (!tbody) return;
-            tbody.innerHTML = '';
+        function onTeacherSelectStudent(val) {
+            if (val) teacherSelectStudentDirect(val);
+        }
+
+        function teacherSelectStudentDirect(studentId) {
+            switchDashboardTab('main');
+            const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
+            const student = students.find(s => String(s.f001) === String(studentId) || String(s.f002) === String(studentId));
+            if (!student) return;
+
+            openEditModal(student);
+        }
+
+        function openAddStudentModal() {
+            const studentName = prompt("Nhập Họ và tên học sinh:");
+            if (!studentName || !studentName.trim()) return;
+
+            const savedSettings = JSON.parse(localStorage.getItem('DB_SYSTEM_SETTINGS') || JSON.stringify(DEFAULT_SETTINGS));
+
+            const newStudent = {
+                f001: (allStudentsList.length + 1).toString(),
+                f002: "",
+                f003: studentName.trim(),
+                f004: "13/09/2016",
+                f005: "Nam",
+                f013: "5",
+                f014: savedSettings.className,
+                f043: "",
+                _status: "PENDING",
+                _modifiedFields: []
+            };
 
             const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
-            
+            students.push(newStudent);
+            localStorage.setItem('DB_STUDENTS', JSON.stringify(students));
+
+            showToast("Đã thêm học sinh mới thành công!", "success");
+            loadTeacherDashboard();
+            teacherSelectStudentDirect(newStudent.f001);
+        }
+
+        // TẢI FILE EXCEL MẪU DẠNG DD/MM/YYYY VỚI EXCELJS
+        async function downloadTemplateFile() {
+            try {
+                showToast("Đang tạo file mẫu Excel chuẩn...", "info");
+                const savedSettings = JSON.parse(localStorage.getItem('DB_SYSTEM_SETTINGS') || JSON.stringify(DEFAULT_SETTINGS));
+                const workbook = new ExcelJS.Workbook();
+                const worksheet = workbook.addWorksheet('HoSoHocSinh');
+
+                // Header Cột từ PARENT_EXCEL_SCHEMA
+                const columnsConfig = PARENT_EXCEL_SCHEMA.map(item => ({
+                    header: item.excelHeader,
+                    key: item.id,
+                    width: Math.max(item.excelHeader.length + 4, 18)
+                }));
+
+                worksheet.columns = columnsConfig;
+
+                // Định dạng Row 1 (Header)
+                const headerRow = worksheet.getRow(1);
+                headerRow.height = 28;
+
+                PARENT_EXCEL_SCHEMA.forEach((item, index) => {
+                    const cell = headerRow.getCell(index + 1);
+                    cell.font = { name: 'Times New Roman', size: 11, bold: true };
+                    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+                    cell.border = {
+                        top: { style: 'thin' }, left: { style: 'thin' },
+                        bottom: { style: 'thin' }, right: { style: 'thin' }
+                    };
+
+                    let colorArgb = 'F2F2F2'; // GV-LOCK: Xám nhạt
+                    if (item.permission === 'PH-NHAP') colorArgb = 'D9EAD3'; // Green nhạt
+                    if (item.permission === 'PH-DROPDOWN') colorArgb = 'FFF2CC'; // Vàng nhạt
+                    if (item.permission === 'PH-CHECKBOX') colorArgb = 'D0E0E3'; // Xanh lá/lam nhạt
+
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: colorArgb }
+                    };
+                });
+
+                worksheet.views = [{ state: 'frozen', ySplit: 1 }];
+                worksheet.autoFilter = {
+                    from: { row: 1, column: 1 },
+                    to: { row: 1, column: PARENT_EXCEL_SCHEMA.length }
+                };
+
+                // Dòng mẫu thử nghiệm
+                for (let r = 2; r <= 6; r++) {
+                    const row = worksheet.getRow(r);
+                    row.height = 20;
+
+                    PARENT_EXCEL_SCHEMA.forEach((item, colIdx) => {
+                        const cell = row.getCell(colIdx + 1);
+                        cell.font = { name: 'Times New Roman', size: 11 };
+                        cell.border = {
+                            top: { style: 'thin' }, left: { style: 'thin' },
+                            bottom: { style: 'thin' }, right: { style: 'thin' }
+                        };
+
+                        if (item.inputType === 'date') {
+                            cell.numFmt = 'dd/mm/yyyy';
+                        }
+
+                        if (item.permission === 'PH-CHECKBOX') {
+                            cell.dataValidation = {
+                                type: 'list',
+                                allowBlank: true,
+                                formulae: ['"Không,Có"']
+                            };
+                        } else if (item.permission === 'PH-DROPDOWN' && item.options) {
+                            const optList = item.options.slice(0, 20).join(',');
+                            cell.dataValidation = {
+                                type: 'list',
+                                allowBlank: true,
+                                formulae: [`"${optList}"`]
+                            };
+                        }
+                    });
+                }
+
+                const fileName = `Mau_Kiem_Tra_Ho_So_Hoc_Sinh_${savedSettings.className}_${savedSettings.schoolYear || '2026-2027'}.xlsx`;
+                const buffer = await workbook.xlsx.writeBuffer();
+                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = fileName;
+                link.click();
+
+                showToast("Tải file mẫu Excel thành công!", "success");
+            } catch (err) {
+                console.error(err);
+                showToast("Lỗi khi tạo file mẫu Excel!", "error");
+            }
+        }
+
+        // TRIGGER IMPORT EXCEL
+        function triggerImportExcel() {
+            document.getElementById('excelFileInput').click();
+        }
+
+        // MAPPING HEADER EXCEL VÀ CHUẨN HÓA TOÀN BỘ NGÀY THÁNG DD/MM/YYYY
+        function handleExcelImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true, cellNF: true });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+
+                    const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, dateNF: 'dd/mm/yyyy' });
+                    if (jsonRows.length < 2) {
+                        showToast("File Excel trống hoặc thiếu dòng tiêu đề!", "warning");
+                        return;
+                    }
+
+                    const headers = jsonRows[0];
+                    const headerMap = {};
+
+                    headers.forEach((h, colIdx) => {
+                        if (!h) return;
+                        const cleanHeader = String(h).trim();
+                        const schemaItem = PARENT_EXCEL_SCHEMA.find(s => s.excelHeader.toLowerCase() === cleanHeader.toLowerCase());
+                        if (schemaItem) {
+                            headerMap[colIdx] = schemaItem;
+                        }
+                    });
+
+                    const importedStudents = [];
+                    for (let r = 1; r < jsonRows.length; r++) {
+                        const row = jsonRows[r];
+                        if (!row || row.length === 0) continue;
+
+                        const studentObj = { _status: "PENDING", _modifiedFields: [] };
+                        Object.keys(headerMap).forEach(colIdx => {
+                            const fieldSchema = headerMap[colIdx];
+                            const fieldId = fieldSchema.id;
+                            let rawCellVal = row[colIdx];
+
+                            if (fieldSchema.inputType === 'date') {
+                                studentObj[fieldId] = normalizeDateForUser(rawCellVal);
+                            } else {
+                                studentObj[fieldId] = rawCellVal !== undefined ? String(rawCellVal).trim() : "";
+                            }
+                        });
+
+                        if (studentObj.f002 || studentObj.f003) {
+                            importedStudents.push(studentObj);
+                        }
+                    }
+
+                    if (importedStudents.length > 0) {
+                        localStorage.setItem('DB_STUDENTS', JSON.stringify(importedStudents));
+                        showToast(`Nhập dữ liệu thành công ${importedStudents.length} học sinh!`, "success");
+                        loadTeacherDashboard();
+                    } else {
+                        showToast("Không khớp được cột header nào từ file Excel!", "error");
+                    }
+                } catch (err) {
+                    console.error(err);
+                    showToast("Đã xảy ra lỗi khi đọc file Excel!", "error");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // XUẤT EXCEL THEO ĐỊNH DẠNG DD/MM/YYYY VỚI EXCELJS
+        async function exportDataToExcel() {
+            const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
             if (students.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">Chưa có dữ liệu học sinh.</td></tr>';
+                showToast("Không có dữ liệu để xuất Excel!", "warning");
                 return;
             }
 
-            students.forEach((s, idx) => {
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('HoSoHocSinh');
+
+            worksheet.columns = PARENT_EXCEL_SCHEMA.map(item => ({
+                header: item.excelHeader,
+                key: item.id,
+                width: Math.max(item.excelHeader.length + 4, 18)
+            }));
+
+            // Header Row
+            const headerRow = worksheet.getRow(1);
+            headerRow.height = 26;
+            PARENT_EXCEL_SCHEMA.forEach((item, index) => {
+                const cell = headerRow.getCell(index + 1);
+                cell.font = { name: 'Times New Roman', size: 11, bold: true };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+            });
+
+            // Data rows
+            students.forEach((st) => {
+                const rowObj = {};
+                PARENT_EXCEL_SCHEMA.forEach(item => {
+                    let val = st[item.id] || "";
+                    if (item.inputType === 'date' && val) {
+                        const dateObj = parseDDMMYYYYToDate(normalizeDateForUser(val));
+                        rowObj[item.id] = dateObj ? dateObj : val;
+                    } else {
+                        rowObj[item.id] = val;
+                    }
+                });
+
+                const addedRow = worksheet.addRow(rowObj);
+                addedRow.height = 20;
+
+                PARENT_EXCEL_SCHEMA.forEach((item, colIdx) => {
+                    const cell = addedRow.getCell(colIdx + 1);
+                    cell.font = { name: 'Times New Roman', size: 11 };
+                    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+                    
+                    if (item.inputType === 'date') {
+                        cell.numFmt = 'dd/mm/yyyy';
+                    }
+                });
+            });
+
+            const savedSettings = JSON.parse(localStorage.getItem('DB_SYSTEM_SETTINGS') || JSON.stringify(DEFAULT_SETTINGS));
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Danh_Sach_Ho_So_Hoc_Sinh_${savedSettings.className}.xlsx`;
+            link.click();
+            showToast("Xuất file Excel thành công!", "success");
+        }
+
+        // MODULE 2: TRA CỨU LỊCH SỬ & NHẬT KÝ
+        function renderModule2HistoryTab() {
+            renderProgressStudentTable();
+            populateHistoryStudentFilterOptions();
+            renderHistoryLogs();
+        }
+
+        function renderProgressStudentTable() {
+            const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
+            const tbody = document.getElementById('progressStudentTableBody');
+            tbody.innerHTML = '';
+
+            const modifiedStudents = students.filter(s => (s._modifiedFields && s._modifiedFields.length > 0) || s._status === 'CONFIRMED');
+            document.getElementById('modifiedStudentsCount').innerText = modifiedStudents.length;
+
+            if (modifiedStudents.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Chưa có học sinh nào tiến hành kiểm tra/chỉnh sửa.</td></tr>';
+                return;
+            }
+
+            modifiedStudents.forEach((s, index) => {
                 const tr = document.createElement('tr');
                 const modifiedCount = (s._modifiedFields || []).length;
-                
-                let statusBadge = '<span class="badge badge-info">CHƯA KIỂM TRA</span>';
-                if (modifiedCount > 0) {
-                    statusBadge = `<span class="badge badge-primary" style="background:#fce8e6; color:#c5221f;">ĐÃ SỬA (${modifiedCount})</span>`;
-                } else if (s._status === 'CONFIRMED') {
-                    statusBadge = '<span class="badge badge-primary" style="background:#e6f4ea; color:#137333;">ĐÃ XÁC NHẬN</span>';
+                let statusHtml = '<span class="badge" style="background:#fce8e6; color:#c5221f;">Đã chỉnh sửa</span>';
+                if (s._status === 'CONFIRMED' && modifiedCount === 0) {
+                    statusHtml = '<span class="badge badge-primary">Đã xác nhận</span>';
                 }
 
                 tr.innerHTML = `
-                    <td>${idx + 1}</td>
-                    <td>${s.f002 || '---'}</td>
-                    <td>${s.f043 || '---'}</td>
-                    <td><strong>${s.f003 || '---'}</strong></td>
+                    <td><strong>${index + 1}</strong></td>
+                    <td><strong>${s.f002 || '---'}</strong></td>
+                    <td>${s.f003 || '---'}</td>
                     <td>${normalizeDateForUser(s.f004) || '---'}</td>
                     <td>${s.f008 || '---'}</td>
-                    <td>${statusBadge}</td>
-                    <td><strong style="color: ${modifiedCount > 0 ? 'var(--danger-color)' : 'inherit'}">${modifiedCount}</strong></td>
+                    <td>${statusHtml}</td>
+                    <td><strong class="text-danger">${modifiedCount}</strong> trường</td>
                     <td>
-                        <button class="btn btn-sm btn-primary" onclick='openEditModal(${JSON.stringify(s)})'>
-                            <i class="fa-solid fa-pen-to-square"></i> Sửa
+                        <button class="btn btn-sm btn-primary" onclick="teacherSelectStudentDirect('${s.f001 || s.f002}')">
+                            <i class="fa-solid fa-eye"></i> Xem chi tiết
                         </button>
                     </td>
                 `;
@@ -1484,19 +1778,9 @@
             });
         }
 
-        function onTeacherSelectStudent(val) {
-            if (!val) return;
-            const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
-            const student = students.find(s => (s.f002 && s.f002 === val) || (s.f001 && s.f001 === val));
-            if (student) {
-                openEditModal(student);
-            }
-        }
-
         function populateHistoryStudentFilterOptions() {
             const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
             const filterSelect = document.getElementById('historyStudentFilter');
-            if (!filterSelect) return;
             filterSelect.innerHTML = '<option value="">Tất cả học sinh</option>';
             students.forEach(s => {
                 const opt = document.createElement('option');
@@ -1506,53 +1790,15 @@
             });
         }
 
-        function renderModule2HistoryTab() {
-            renderHistoryLogs();
-            const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
-            const modifiedStudents = students.filter(s => (s._modifiedFields || []).length > 0);
-            
-            const countEl = document.getElementById('modifiedStudentsCount');
-            if (countEl) countEl.innerText = modifiedStudents.length;
-
-            const tbody = document.getElementById('progressStudentTableBody');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-
-            if (modifiedStudents.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Chưa có học sinh nào chỉnh sửa dữ liệu.</td></tr>';
-                return;
-            }
-
-            modifiedStudents.forEach((s, idx) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${idx + 1}</td>
-                    <td>${s.f002 || '---'}</td>
-                    <td><strong>${s.f003}</strong></td>
-                    <td>${normalizeDateForUser(s.f004) || '---'}</td>
-                    <td>${s.f008 || '---'}</td>
-                    <td><span class="badge" style="background:#fce8e6; color:#c5221f;">ĐÃ SỬA</span></td>
-                    <td><strong>${(s._modifiedFields || []).length}</strong></td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick='openEditModal(${JSON.stringify(s)})'>
-                            <i class="fa-solid fa-eye"></i> Xem
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
         function renderHistoryLogs() {
             const logs = JSON.parse(localStorage.getItem('DB_AUDIT_LOGS') || '[]');
             const tbody = document.getElementById('historyTableBody');
-            if (!tbody) return;
             tbody.innerHTML = '';
 
-            const keyword = document.getElementById('historySearchInput') ? document.getElementById('historySearchInput').value.toLowerCase().trim() : '';
-            const studentFilter = document.getElementById('historyStudentFilter') ? document.getElementById('historyStudentFilter').value : '';
-            const fromDateStr = document.getElementById('historyFromDate') ? document.getElementById('historyFromDate').value.trim() : '';
-            const toDateStr = document.getElementById('historyToDate') ? document.getElementById('historyToDate').value.trim() : '';
+            const keyword = document.getElementById('historySearchInput').value.toLowerCase().trim();
+            const studentFilter = document.getElementById('historyStudentFilter').value;
+            const fromDateStr = document.getElementById('historyFromDate').value.trim();
+            const toDateStr = document.getElementById('historyToDate').value.trim();
 
             const filtered = logs.filter(log => {
                 if (keyword) {
@@ -1603,10 +1849,6 @@
             });
         }
 
-        function revertSingleField(studentCode, fieldName, oldValue) {
-            showToast(`Khôi phục trường ${fieldName} về giá trị: ${oldValue}`, "info");
-        }
-
         function saveSystemSettings(e) {
             e.preventDefault();
             const newSettings = {
@@ -1640,37 +1882,8 @@
                 showToast("Đã khôi phục cài đặt gốc mặc định!", "info");
             }
         }
-
-        function openAddStudentModal() {
-            const newStudent = {
-                f001: String(Date.now()).slice(-4),
-                f002: "",
-                f003: "Học sinh mới",
-                f004: "01/01/2016",
-                _status: "PENDING",
-                _modifiedFields: []
-            };
-            openEditModal(newStudent);
-        }
-
-        function downloadTemplateFile() {
-            showToast("Đang chuẩn bị file mẫu Excel...", "info");
-        }
-
-        function triggerImportExcel() {
-            document.getElementById('excelFileInput').click();
-        }
-
-        function handleExcelImport(e) {
-            showToast("Đã tải dữ liệu từ Excel thành công!", "success");
-        }
-
-        function exportDataToExcel() {
-            showToast("Đang xuất dữ liệu ra file Excel...", "success");
-        }
     </script>
-
-    <!-- KẾT NỐI FIREBASE COMPAT DÙNG CHUẨN NGOÀI SCRIPT CHÍNH -->
+<!-- KẾT NỐI FIREBASE COMPAT DÙNG CHUẨN NGOÀI SCRIPT CHÍNH -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
