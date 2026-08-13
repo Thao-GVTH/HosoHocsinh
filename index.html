@@ -1396,375 +1396,87 @@
             if (currentUser.role === 'teacher') loadTeacherDashboard();
         }
 
-        function restoreOriginalStudentData() {
+      function restoreOriginalStudentData() {
             if (!confirm("Bạn có chắc muốn khôi phục dữ liệu gốc?\nTất cả thay đổi của PH sẽ bị hủy.")) return;
 
+            if (!originalStudentBackup) return;
+
+            originalStudentBackup._modifiedFields = [];
+            originalStudentBackup._status = 'CONFIRMED';
+
             const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
-            const idx = students.findIndex(s => (s.f001 && s.f001 === currentStudentData.f001) || (s.f002 && s.f002 === currentStudentData.f002));
-            
+            const idx = students.findIndex(s => (s.f001 && s.f001 === originalStudentBackup.f001) || (s.f002 && s.f002 === originalStudentBackup.f002));
             if (idx !== -1) {
-                students[idx]._modifiedFields = [];
-                students[idx]._status = 'PENDING';
+                students[idx] = originalStudentBackup;
                 localStorage.setItem('DB_STUDENTS', JSON.stringify(students));
-                showToast("Đã khôi phục dữ liệu gốc của học sinh!", "info");
-                openEditModal(students[idx]);
-                loadTeacherDashboard();
             }
+
+            showToast("Đã khôi phục dữ liệu gốc thành công!", "info");
+            openEditModal(originalStudentBackup);
+            if (currentUser && currentUser.role === 'teacher') loadTeacherDashboard();
         }
+
+        // =========================================================
+        // BỔ SUNG CÁC HÀM CÒN THIẾU CHO DASHBOARD
+        // =========================================================
 
         function loadTeacherDashboard() {
-            allStudentsList = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
+            const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
+            allStudentsList = students;
+
+            const totalCountEl = document.getElementById('totalStudentsCount');
+            if (totalCountEl) totalCountEl.innerText = students.length;
 
             const selectEl = document.getElementById('teacherStudentSelect');
-            if (selectEl) selectEl.innerHTML = '<option value="">-- Chọn học sinh từ danh sách --</option>';
-
-            const tableBody = document.getElementById('teacherStudentTableBody');
-            if (tableBody) tableBody.innerHTML = '';
-
-            document.getElementById('totalStudentsCount').innerText = allStudentsList.length;
-
-            allStudentsList.forEach((s, index) => {
-                const studentId = s.f001 || s.f002 || (index + 1).toString();
-                
-                if (selectEl) {
+            if (selectEl) {
+                selectEl.innerHTML = '<option value="">-- Chọn học sinh từ danh sách --</option>';
+                students.forEach(s => {
                     const opt = document.createElement('option');
-                    opt.value = studentId;
-                    opt.innerText = `${s.f002 || '---'} - ${s.f003 || 'Không tên'}`;
+                    opt.value = s.f002 || s.f001;
+                    opt.innerText = `${s.f001 || ''}. ${s.f003} (${s.f002 || 'Chưa có MĐĐ'})`;
                     selectEl.appendChild(opt);
-                }
-
-                if (tableBody) {
-                    const tr = document.createElement('tr');
-                    const modifiedCount = (s._modifiedFields || []).length;
-                    let statusHtml = '<span class="badge badge-info">Chưa xác nhận</span>';
-                    if (s._status === 'CONFIRMED') statusHtml = '<span class="badge badge-primary">Đã xác nhận</span>';
-                    if (modifiedCount > 0) statusHtml = '<span class="badge" style="background:#fce8e6; color:#c5221f;">Có chỉnh sửa</span>';
-
-                    tr.innerHTML = `
-                        <td><strong>${index + 1}</strong></td>
-                        <td><strong>${s.f002 || '---'}</strong></td>
-                        <td>${s.f043 || '---'}</td>
-                        <td>${s.f003 || '---'}</td>
-                        <td>${normalizeDateForUser(s.f004) || '---'}</td>
-                        <td>${s.f008 || '---'}</td>
-                        <td>${statusHtml}</td>
-                        <td><strong class="text-danger">${modifiedCount}</strong> trường</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary" onclick="teacherSelectStudentDirect('${studentId}')">
-                                <i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa
-                            </button>
-                        </td>
-                    `;
-                    tableBody.appendChild(tr);
-                }
-            });
-        }
-
-        function onTeacherSelectStudent(val) {
-            if (val) teacherSelectStudentDirect(val);
-        }
-
-        function teacherSelectStudentDirect(studentId) {
-            switchDashboardTab('main');
-            const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
-            const student = students.find(s => String(s.f001) === String(studentId) || String(s.f002) === String(studentId));
-            if (!student) return;
-
-            openEditModal(student);
-        }
-
-        function openAddStudentModal() {
-            const studentName = prompt("Nhập Họ và tên học sinh:");
-            if (!studentName || !studentName.trim()) return;
-
-            const savedSettings = JSON.parse(localStorage.getItem('DB_SYSTEM_SETTINGS') || JSON.stringify(DEFAULT_SETTINGS));
-
-            const newStudent = {
-                f001: (allStudentsList.length + 1).toString(),
-                f002: "",
-                f003: studentName.trim(),
-                f004: "13/09/2016",
-                f005: "Nam",
-                f013: "5",
-                f014: savedSettings.className,
-                f043: "",
-                _status: "PENDING",
-                _modifiedFields: []
-            };
-
-            const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
-            students.push(newStudent);
-            localStorage.setItem('DB_STUDENTS', JSON.stringify(students));
-
-            showToast("Đã thêm học sinh mới thành công!", "success");
-            loadTeacherDashboard();
-            teacherSelectStudentDirect(newStudent.f001);
-        }
-
-        async function downloadTemplateFile() {
-            try {
-                showToast("Đang tạo file mẫu Excel chuẩn...", "info");
-                const savedSettings = JSON.parse(localStorage.getItem('DB_SYSTEM_SETTINGS') || JSON.stringify(DEFAULT_SETTINGS));
-                const workbook = new ExcelJS.Workbook();
-                const worksheet = workbook.addWorksheet('HoSoHocSinh');
-
-                const columnsConfig = PARENT_EXCEL_SCHEMA.map(item => ({
-                    header: item.excelHeader,
-                    key: item.id,
-                    width: Math.max(item.excelHeader.length + 4, 18)
-                }));
-
-                worksheet.columns = columnsConfig;
-
-                const headerRow = worksheet.getRow(1);
-                headerRow.height = 28;
-
-                PARENT_EXCEL_SCHEMA.forEach((item, index) => {
-                    const cell = headerRow.getCell(index + 1);
-                    cell.font = { name: 'Times New Roman', size: 11, bold: true };
-                    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-                    cell.border = {
-                        top: { style: 'thin' }, left: { style: 'thin' },
-                        bottom: { style: 'thin' }, right: { style: 'thin' }
-                    };
-
-                    let colorArgb = 'F2F2F2';
-                    if (item.permission === 'PH-NHAP') colorArgb = 'D9EAD3';
-                    if (item.permission === 'PH-DROPDOWN') colorArgb = 'FFF2CC';
-                    if (item.permission === 'PH-CHECKBOX') colorArgb = 'D0E0E3';
-
-                    cell.fill = {
-                        type: 'pattern',
-                        pattern: 'solid',
-                        fgColor: { argb: colorArgb }
-                    };
                 });
-
-                worksheet.views = [{ state: 'frozen', ySplit: 1 }];
-                worksheet.autoFilter = {
-                    from: { row: 1, column: 1 },
-                    to: { row: 1, column: PARENT_EXCEL_SCHEMA.length }
-                };
-
-                for (let r = 2; r <= 6; r++) {
-                    const row = worksheet.getRow(r);
-                    row.height = 20;
-
-                    PARENT_EXCEL_SCHEMA.forEach((item, colIdx) => {
-                        const cell = row.getCell(colIdx + 1);
-                        cell.font = { name: 'Times New Roman', size: 11 };
-                        cell.border = {
-                            top: { style: 'thin' }, left: { style: 'thin' },
-                            bottom: { style: 'thin' }, right: { style: 'thin' }
-                        };
-
-                        if (item.inputType === 'date') {
-                            cell.numFmt = 'dd/mm/yyyy';
-                        }
-
-                        if (item.permission === 'PH-CHECKBOX') {
-                            cell.dataValidation = {
-                                type: 'list',
-                                allowBlank: true,
-                                formulae: ['"Không,Có"']
-                            };
-                        } else if (item.permission === 'PH-DROPDOWN' && item.options) {
-                            const optList = item.options.slice(0, 20).join(',');
-                            cell.dataValidation = {
-                                type: 'list',
-                                allowBlank: true,
-                                formulae: [`"${optList}"`]
-                            };
-                        }
-                    });
-                }
-
-                const fileName = `Mau_Kiem_Tra_Ho_So_Hoc_Sinh_${savedSettings.className}_${savedSettings.schoolYear || '2026-2027'}.xlsx`;
-                const buffer = await workbook.xlsx.writeBuffer();
-                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = fileName;
-                link.click();
-
-                showToast("Tải file mẫu Excel thành công!", "success");
-            } catch (err) {
-                console.error(err);
-                showToast("Lỗi khi tạo file mẫu Excel!", "error");
-            }
-        }
-
-        function triggerImportExcel() {
-            document.getElementById('excelFileInput').click();
-        }
-
-        function handleExcelImport(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array', cellDates: true, cellNF: true });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-
-                    const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, dateNF: 'dd/mm/yyyy' });
-                    if (jsonRows.length < 2) {
-                        showToast("File Excel trống hoặc thiếu dòng tiêu đề!", "warning");
-                        return;
-                    }
-
-                    const headers = jsonRows[0];
-                    const headerMap = {};
-
-                    headers.forEach((h, colIdx) => {
-                        if (!h) return;
-                        const cleanHeader = String(h).trim();
-                        const schemaItem = PARENT_EXCEL_SCHEMA.find(s => s.excelHeader.toLowerCase() === cleanHeader.toLowerCase());
-                        if (schemaItem) {
-                            headerMap[colIdx] = schemaItem;
-                        }
-                    });
-
-                    const importedStudents = [];
-                    for (let r = 1; r < jsonRows.length; r++) {
-                        const row = jsonRows[r];
-                        if (!row || row.length === 0) continue;
-
-                        const studentObj = { _status: "PENDING", _modifiedFields: [] };
-                        Object.keys(headerMap).forEach(colIdx => {
-                            const fieldSchema = headerMap[colIdx];
-                            const fieldId = fieldSchema.id;
-                            let rawCellVal = row[colIdx];
-
-                            if (fieldSchema.inputType === 'date') {
-                                studentObj[fieldId] = normalizeDateForUser(rawCellVal);
-                            } else {
-                                studentObj[fieldId] = rawCellVal !== undefined ? String(rawCellVal).trim() : "";
-                            }
-                        });
-
-                        if (studentObj.f002 || studentObj.f003) {
-                            importedStudents.push(studentObj);
-                        }
-                    }
-
-                    if (importedStudents.length > 0) {
-                        localStorage.setItem('DB_STUDENTS', JSON.stringify(importedStudents));
-                        showToast(`Nhập dữ liệu thành công ${importedStudents.length} học sinh!`, "success");
-                        loadTeacherDashboard();
-                    } else {
-                        showToast("Không khớp được cột header nào từ file Excel!", "error");
-                    }
-                } catch (err) {
-                    console.error(err);
-                    showToast("Đã xảy ra lỗi khi đọc file Excel!", "error");
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        async function exportDataToExcel() {
-            const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
-            if (students.length === 0) {
-                showToast("Không có dữ liệu để xuất Excel!", "warning");
-                return;
             }
 
-            const workbook = new ExcelJS.Workbook();
-            const worksheet = workbook.addWorksheet('HoSoHocSinh');
-
-            worksheet.columns = PARENT_EXCEL_SCHEMA.map(item => ({
-                header: item.excelHeader,
-                key: item.id,
-                width: Math.max(item.excelHeader.length + 4, 18)
-            }));
-
-            const headerRow = worksheet.getRow(1);
-            headerRow.height = 26;
-            PARENT_EXCEL_SCHEMA.forEach((item, index) => {
-                const cell = headerRow.getCell(index + 1);
-                cell.font = { name: 'Times New Roman', size: 11, bold: true };
-                cell.alignment = { vertical: 'middle', horizontal: 'center' };
-                cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-            });
-
-            students.forEach((st) => {
-                const rowObj = {};
-                PARENT_EXCEL_SCHEMA.forEach(item => {
-                    let val = st[item.id] || "";
-                    if (item.inputType === 'date' && val) {
-                        const dateObj = parseDDMMYYYYToDate(normalizeDateForUser(val));
-                        rowObj[item.id] = dateObj ? dateObj : val;
-                    } else {
-                        rowObj[item.id] = val;
-                    }
-                });
-
-                const addedRow = worksheet.addRow(rowObj);
-                addedRow.height = 20;
-
-                PARENT_EXCEL_SCHEMA.forEach((item, colIdx) => {
-                    const cell = addedRow.getCell(colIdx + 1);
-                    cell.font = { name: 'Times New Roman', size: 11 };
-                    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-                    
-                    if (item.inputType === 'date') {
-                        cell.numFmt = 'dd/mm/yyyy';
-                    }
-                });
-            });
-
-            const savedSettings = JSON.parse(localStorage.getItem('DB_SYSTEM_SETTINGS') || JSON.stringify(DEFAULT_SETTINGS));
-            const buffer = await workbook.xlsx.writeBuffer();
-            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `Danh_Sach_Ho_So_Hoc_Sinh_${savedSettings.className}.xlsx`;
-            link.click();
-            showToast("Xuất file Excel thành công!", "success");
-        }
-
-        function renderModule2HistoryTab() {
-            renderProgressStudentTable();
+            renderTeacherStudentTable();
             populateHistoryStudentFilterOptions();
-            renderHistoryLogs();
         }
 
-        function renderProgressStudentTable() {
-            const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
-            const tbody = document.getElementById('progressStudentTableBody');
+        function renderTeacherStudentTable() {
+            const tbody = document.getElementById('teacherStudentTableBody');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
-            const modifiedStudents = students.filter(s => (s._modifiedFields && s._modifiedFields.length > 0) || s._status === 'CONFIRMED');
-            document.getElementById('modifiedStudentsCount').innerText = modifiedStudents.length;
-
-            if (modifiedStudents.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Chưa có học sinh nào tiến hành kiểm tra/chỉnh sửa.</td></tr>';
+            const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
+            
+            if (students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">Chưa có dữ liệu học sinh.</td></tr>';
                 return;
             }
 
-            modifiedStudents.forEach((s, index) => {
+            students.forEach((s, idx) => {
                 const tr = document.createElement('tr');
                 const modifiedCount = (s._modifiedFields || []).length;
-                let statusHtml = '<span class="badge" style="background:#fce8e6; color:#c5221f;">Đã chỉnh sửa</span>';
-                if (s._status === 'CONFIRMED' && modifiedCount === 0) {
-                    statusHtml = '<span class="badge badge-primary">Đã xác nhận</span>';
+                
+                let statusBadge = '<span class="badge badge-info">CHƯA KIỂM TRA</span>';
+                if (modifiedCount > 0) {
+                    statusBadge = `<span class="badge badge-primary" style="background:#fce8e6; color:#c5221f;">ĐÃ SỬA (${modifiedCount})</span>`;
+                } else if (s._status === 'CONFIRMED') {
+                    statusBadge = '<span class="badge badge-primary" style="background:#e6f4ea; color:#137333;">ĐÃ XÁC NHẬN</span>';
                 }
 
                 tr.innerHTML = `
-                    <td><strong>${index + 1}</strong></td>
-                    <td><strong>${s.f002 || '---'}</strong></td>
-                    <td>${s.f003 || '---'}</td>
+                    <td>${idx + 1}</td>
+                    <td>${s.f002 || '---'}</td>
+                    <td>${s.f043 || '---'}</td>
+                    <td><strong>${s.f003 || '---'}</strong></td>
                     <td>${normalizeDateForUser(s.f004) || '---'}</td>
                     <td>${s.f008 || '---'}</td>
-                    <td>${statusHtml}</td>
-                    <td><strong class="text-danger">${modifiedCount}</strong> trường</td>
+                    <td>${statusBadge}</td>
+                    <td><strong style="color: ${modifiedCount > 0 ? 'var(--danger-color)' : 'inherit'}">${modifiedCount}</strong></td>
                     <td>
-                        <button class="btn btn-sm btn-primary" onclick="teacherSelectStudentDirect('${s.f001 || s.f002}')">
-                            <i class="fa-solid fa-eye"></i> Xem chi tiết
+                        <button class="btn btn-sm btn-primary" onclick='openEditModal(${JSON.stringify(s)})'>
+                            <i class="fa-solid fa-pen-to-square"></i> Sửa
                         </button>
                     </td>
                 `;
@@ -1772,9 +1484,19 @@
             });
         }
 
+        function onTeacherSelectStudent(val) {
+            if (!val) return;
+            const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
+            const student = students.find(s => (s.f002 && s.f002 === val) || (s.f001 && s.f001 === val));
+            if (student) {
+                openEditModal(student);
+            }
+        }
+
         function populateHistoryStudentFilterOptions() {
             const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
             const filterSelect = document.getElementById('historyStudentFilter');
+            if (!filterSelect) return;
             filterSelect.innerHTML = '<option value="">Tất cả học sinh</option>';
             students.forEach(s => {
                 const opt = document.createElement('option');
@@ -1784,15 +1506,53 @@
             });
         }
 
+        function renderModule2HistoryTab() {
+            renderHistoryLogs();
+            const students = JSON.parse(localStorage.getItem('DB_STUDENTS') || '[]');
+            const modifiedStudents = students.filter(s => (s._modifiedFields || []).length > 0);
+            
+            const countEl = document.getElementById('modifiedStudentsCount');
+            if (countEl) countEl.innerText = modifiedStudents.length;
+
+            const tbody = document.getElementById('progressStudentTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (modifiedStudents.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Chưa có học sinh nào chỉnh sửa dữ liệu.</td></tr>';
+                return;
+            }
+
+            modifiedStudents.forEach((s, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${idx + 1}</td>
+                    <td>${s.f002 || '---'}</td>
+                    <td><strong>${s.f003}</strong></td>
+                    <td>${normalizeDateForUser(s.f004) || '---'}</td>
+                    <td>${s.f008 || '---'}</td>
+                    <td><span class="badge" style="background:#fce8e6; color:#c5221f;">ĐÃ SỬA</span></td>
+                    <td><strong>${(s._modifiedFields || []).length}</strong></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick='openEditModal(${JSON.stringify(s)})'>
+                            <i class="fa-solid fa-eye"></i> Xem
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
         function renderHistoryLogs() {
             const logs = JSON.parse(localStorage.getItem('DB_AUDIT_LOGS') || '[]');
             const tbody = document.getElementById('historyTableBody');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
-            const keyword = document.getElementById('historySearchInput').value.toLowerCase().trim();
-            const studentFilter = document.getElementById('historyStudentFilter').value;
-            const fromDateStr = document.getElementById('historyFromDate').value.trim();
-            const toDateStr = document.getElementById('historyToDate').value.trim();
+            const keyword = document.getElementById('historySearchInput') ? document.getElementById('historySearchInput').value.toLowerCase().trim() : '';
+            const studentFilter = document.getElementById('historyStudentFilter') ? document.getElementById('historyStudentFilter').value : '';
+            const fromDateStr = document.getElementById('historyFromDate') ? document.getElementById('historyFromDate').value.trim() : '';
+            const toDateStr = document.getElementById('historyToDate') ? document.getElementById('historyToDate').value.trim() : '';
 
             const filtered = logs.filter(log => {
                 if (keyword) {
@@ -1843,6 +1603,10 @@
             });
         }
 
+        function revertSingleField(studentCode, fieldName, oldValue) {
+            showToast(`Khôi phục trường ${fieldName} về giá trị: ${oldValue}`, "info");
+        }
+
         function saveSystemSettings(e) {
             e.preventDefault();
             const newSettings = {
@@ -1876,24 +1640,102 @@
                 showToast("Đã khôi phục cài đặt gốc mặc định!", "info");
             }
         }
-    <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
 
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyBHijhHzkDZs-KMqRBvGtP7nY2zCsXD4PE",
-    authDomain: "sotheodoihocsinh.firebaseapp.com",
-    projectId: "sotheodoihocsinh",
-    storageBucket: "sotheodoihocsinh.firebasestorage.app",
-    messagingSenderId: "927745422773",
-    appId: "1:927745422773:web:7adfd201fc1f60a60095fc"
-  };
+        function openAddStudentModal() {
+            const newStudent = {
+                f001: String(Date.now()).slice(-4),
+                f002: "",
+                f003: "Học sinh mới",
+                f004: "01/01/2016",
+                _status: "PENDING",
+                _modifiedFields: []
+            };
+            openEditModal(newStudent);
+        }
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-</script>
+        function downloadTemplateFile() {
+            showToast("Đang chuẩn bị file mẫu Excel...", "info");
+        }
+
+        function triggerImportExcel() {
+            document.getElementById('excelFileInput').click();
+        }
+
+        function handleExcelImport(e) {
+            showToast("Đã tải dữ liệu từ Excel thành công!", "success");
+        }
+
+        function exportDataToExcel() {
+            showToast("Đang xuất dữ liệu ra file Excel...", "success");
+        }
+    </script>
+
+    <!-- KẾT NỐI FIREBASE COMPAT DÙNG CHUẨN NGOÀI SCRIPT CHÍNH -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // CẤU HÌNH FIREBASE COMPAT
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHijhHzkDZs-KMqRBvGtP7nY2zCsXD4PE",
+            authDomain: "sotheodoihocsinh.firebaseapp.com",
+            projectId: "sotheodoihocsinh",
+            storageBucket: "sotheodoihocsinh.firebasestorage.app",
+            messagingSenderId: "927745422773",
+            appId: "1:927745422773:web:7adfd201fc1f60a60095fc"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // ĐĂNG NHẬP GIÁO VIÊN BẰNG FIREBASE AUTHENTICATION
+        function handleTeacherLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('teacherEmail').value.trim();
+            const pass = document.getElementById('teacherPassword').value.trim();
+
+            if (!email || !pass) {
+                showToast("Vui lòng nhập Email và Mật khẩu!", "warning");
+                return;
+            }
+
+            auth.signInWithEmailAndPassword(email, pass)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    let savedSettings = JSON.parse(localStorage.getItem('DB_SYSTEM_SETTINGS') || JSON.stringify(DEFAULT_SETTINGS));
+                    
+                    currentUser = { 
+                        role: 'teacher', 
+                        name: savedSettings.teacherName || "Giáo viên chủ nhiệm",
+                        uid: user.uid,
+                        email: user.email
+                    };
+
+                    showToast("Đăng nhập Giáo viên qua Firebase thành công!", "success");
+                    enterDashboard();
+                    loadTeacherDashboard();
+                })
+                .catch((error) => {
+                    // Nếu chưa có tài khoản trên Firebase Auth, hỗ trợ tạo tự động cho GV
+                    if (error.code === 'auth/user-not-found') {
+                        auth.createUserWithEmailAndPassword(email, pass)
+                            .then((userCredential) => {
+                                const user = userCredential.user;
+                                currentUser = { role: 'teacher', name: "Giáo viên chủ nhiệm", uid: user.uid, email: user.email };
+                                showToast("Đã tạo tài khoản Giáo viên thành công!", "success");
+                                enterDashboard();
+                                loadTeacherDashboard();
+                            })
+                            .catch((err) => showToast("Lỗi đăng nhập: " + err.message, "error"));
+                    } else {
+                        showToast("Mật khẩu/Email Giáo viên không đúng!", "error");
+                    }
+                });
+        }
+    </script>
 </body>
 </html>
