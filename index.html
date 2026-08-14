@@ -260,9 +260,6 @@
         .text-right { text-align: right; }
         .text-danger { color: var(--danger-color); }
 
-        .avatar-preview-container { display: flex; align-items: center; gap: 16px; margin-top: 6px; }
-        .avatar-preview { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); background-color: #e8eaed; }
-
         .row { display: flex; flex-wrap: wrap; margin: -10px; }
         .col-md-4 { flex: 0 0 33.333%; padding: 10px; }
         .col-md-8 { flex: 0 0 66.666%; padding: 10px; }
@@ -289,7 +286,6 @@
             </div>
             
             <div class="user-profile" id="userProfileNav" style="display: none;">
-                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Avatar" class="user-avatar-nav" id="navUserAvatar">
                 <span class="user-role-badge" id="userRoleBadge">Phụ huynh</span>
                 <span class="user-display-name" id="userDisplayName">Học sinh</span>
                 <button class="btn btn-outline-light btn-sm" id="btnLogout" onclick="logoutUser()">
@@ -346,11 +342,11 @@
                     <form id="teacherLoginForm" class="login-form" style="display: none;" onsubmit="handleTeacherLogin(event)">
                         <div class="form-group mb-3">
                             <label for="teacherEmail"><i class="fa-solid fa-envelope"></i> Email Giáo viên:</label>
-                            <input type="email" id="teacherEmail" class="form-control" placeholder="gvcn.anphu@gmail.com" value="gvcn.anphu@gmail.com" required>
+                            <input type="email" id="teacherEmail" class="form-control" placeholder="Nhập email" value="" required>
                         </div>
                         <div class="form-group mb-3">
                             <label for="teacherPassword"><i class="fa-solid fa-lock"></i> Mật khẩu:</label>
-                            <input type="password" id="teacherPassword" class="form-control" placeholder="••••••••" value="123456" required>
+                            <input type="password" id="teacherPassword" class="form-control" placeholder="Nhập mật khẩu" value="" required>
                         </div>
                         <button type="submit" class="btn btn-success btn-block btn-lg">
                             <i class="fa-solid fa-user-lock"></i> Đăng Nhập Quản Trị
@@ -547,17 +543,6 @@
                                             <option value="2029-2030">2029-2030</option>
                                         </select>
                                     </div>
-                                    
-                                    <div class="form-group mb-3">
-                                        <label for="settingAvatarInput">Ảnh đại diện:</label>
-                                        <div class="avatar-preview-container">
-                                            <img id="settingAvatarPreview" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Ảnh đại diện" class="avatar-preview">
-                                            <div>
-                                                <input type="file" id="settingAvatarInput" accept="image/*" class="form-control" onchange="previewAvatar(event)">
-                                                <small class="text-muted" style="display:block; margin-top: 4px;">Chọn ảnh từ thiết bị để tải lên</small>
-                                            </div>
-                                        </div>
-                                    </div>
 
                                     <div class="d-flex gap-2 mt-4" style="flex-wrap: wrap;">
                                         <button type="submit" class="btn btn-primary">
@@ -614,6 +599,40 @@
                     <i class="fa-solid fa-arrow-rotate-left"></i> Khôi phục dữ liệu gốc
                 </button>
                 <button type="button" class="btn btn-outline-light" style="color: #333; border: 1px solid #ccc;" onclick="closeEditModal()">
+                    Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL POPUP THÊM HỌC SINH (MỚI) -->
+    <div id="addStudentModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h3 class="m-0"><i class="fa-solid fa-user-plus"></i> Thêm Học Sinh Mới</h3>
+                    <div style="margin-top: 4px;">
+                        <span class="badge badge-primary">Nhập đầy đủ thông tin học sinh</span>
+                    </div>
+                </div>
+                <div class="d-flex align-center gap-2">
+                    <button class="close-modal-btn" onclick="closeAddStudentModal()">&times;</button>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <form id="addStudentDataForm">
+                    <div class="accordion-container" id="addAccordionGroups">
+                        <!-- Dynamic JS render các nhóm trường thêm học sinh -->
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" onclick="saveNewStudentData()">
+                    <i class="fa-solid fa-floppy-disk"></i> LƯU HỌC SINH MỚI
+                </button>
+                <button type="button" class="btn btn-outline-light" style="color: #333; border: 1px solid #ccc;" onclick="closeAddStudentModal()">
                     Đóng
                 </button>
             </div>
@@ -788,8 +807,7 @@
             schoolName: "Tiểu học An Phú",
             teacherName: "Nguyễn Thị Thu Thảo",
             className: "5.11",
-            schoolYear: "2026-2027",
-            avatarUrl: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+            schoolYear: "2026-2027"
         };
 
         let currentUser = null;
@@ -955,13 +973,17 @@
             document.getElementById('settingTeacherName').value = savedSettings.teacherName || DEFAULT_SETTINGS.teacherName;
             document.getElementById('settingClassName').value = savedSettings.className || DEFAULT_SETTINGS.className;
             document.getElementById('settingSchoolYear').value = savedSettings.schoolYear || "2026-2027";
-            document.getElementById('settingAvatarPreview').src = savedSettings.avatarUrl || DEFAULT_SETTINGS.avatarUrl;
 
             const schoolStr = savedSettings.schoolName || DEFAULT_SETTINGS.schoolName;
             document.getElementById('navSchoolName').innerText = schoolStr.toUpperCase().includes('TRƯỜNG') ? schoolStr.toUpperCase() : `TRƯỜNG ${schoolStr.toUpperCase()}`;
             document.getElementById('navClassName').innerText = `LỚP ${savedSettings.className || "5.11"} - NĂM HỌC ${savedSettings.schoolYear || "2026-2027"}`;
             document.getElementById('loginSubtitle').innerText = `${schoolStr} - Lớp ${savedSettings.className || "5.11"}`;
-            document.getElementById('navUserAvatar').src = savedSettings.avatarUrl || DEFAULT_SETTINGS.avatarUrl;
+
+            // Cập nhật tên giáo viên ở góc phải bên trên trang nếu là giáo viên đăng nhập
+            if (currentUser && currentUser.role === 'teacher') {
+                currentUser.name = savedSettings.teacherName || DEFAULT_SETTINGS.teacherName;
+                document.getElementById('userDisplayName').innerText = currentUser.name;
+            }
         }
 
         async function saveSystemSettings(e) {
@@ -970,8 +992,7 @@
                 schoolName: document.getElementById('settingSchoolName').value.trim(),
                 teacherName: document.getElementById('settingTeacherName').value.trim(),
                 className: document.getElementById('settingClassName').value.trim(),
-                schoolYear: document.getElementById('settingSchoolYear').value,
-                avatarUrl: document.getElementById('settingAvatarPreview').src
+                schoolYear: document.getElementById('settingSchoolYear').value
             };
 
             try {
@@ -1028,6 +1049,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadSystemSettingsFromFirestore();
             renderAccordionFormSchema();
+            renderAddAccordionFormSchema();
             listenToAuditLogsRealtime();
         });
 
@@ -1171,7 +1193,127 @@
             });
         }
 
+        // Form schema cho Thêm học sinh mới
+        function renderAddAccordionFormSchema() {
+            const container = document.getElementById('addAccordionGroups');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const groupsMap = {};
+            PARENT_EXCEL_SCHEMA.forEach(field => {
+                if (!groupsMap[field.group]) groupsMap[field.group] = [];
+                groupsMap[field.group].push(field);
+            });
+
+            Object.keys(groupsMap).forEach((groupName, index) => {
+                const fields = groupsMap[groupName];
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'accordion-item';
+
+                const groupKey = `add_group_${index}`;
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'accordion-header';
+                headerDiv.onclick = () => toggleAddAccordion(groupKey);
+                headerDiv.innerHTML = `
+                    <span><i class="fa-solid fa-folder-open"></i> ${groupName}</span>
+                    <i class="fa-solid fa-chevron-down" id="icon-${groupKey}"></i>
+                `;
+
+                const bodyDiv = document.createElement('div');
+                bodyDiv.className = 'accordion-body';
+                bodyDiv.id = `body-${groupKey}`;
+                if (index !== 0) bodyDiv.style.display = 'none';
+
+                fields.forEach(field => {
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'form-group';
+
+                    const label = document.createElement('label');
+                    label.setAttribute('for', `add_${field.id}`);
+                    label.innerText = field.label;
+                    groupDiv.appendChild(label);
+
+                    let inputEl;
+                    if (field.inputType === 'select') {
+                        inputEl = document.createElement('select');
+                        inputEl.className = 'form-control';
+                        inputEl.id = `add_${field.id}`;
+                        
+                        const defaultOpt = document.createElement('option');
+                        defaultOpt.value = '';
+                        defaultOpt.innerText = '-- Chọn --';
+                        inputEl.appendChild(defaultOpt);
+
+                        field.options.forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt;
+                            option.innerText = opt;
+                            inputEl.appendChild(option);
+                        });
+                    } else if (field.inputType === 'checkbox') {
+                        inputEl = document.createElement('select');
+                        inputEl.className = 'form-control';
+                        inputEl.id = `add_${field.id}`;
+                        
+                        ['Không', 'Có'].forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt;
+                            option.innerText = opt;
+                            inputEl.appendChild(option);
+                        });
+                    } else if (field.inputType === 'combobox') {
+                        inputEl = document.createElement('input');
+                        inputEl.type = 'text';
+                        inputEl.className = 'form-control';
+                        inputEl.id = `add_${field.id}`;
+                        inputEl.setAttribute('list', `add_list-${field.id}`);
+
+                        const datalist = document.createElement('datalist');
+                        datalist.id = `add_list-${field.id}`;
+                        field.options.forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt;
+                            datalist.appendChild(option);
+                        });
+                        groupDiv.appendChild(datalist);
+                    } else if (field.inputType === 'date') {
+                        inputEl = document.createElement('input');
+                        inputEl.type = 'text';
+                        inputEl.className = 'form-control';
+                        inputEl.id = `add_${field.id}`;
+                        inputEl.placeholder = 'dd/mm/yyyy';
+                        inputEl.maxLength = 10;
+                        inputEl.addEventListener('input', () => formatDateInput(inputEl));
+                    } else {
+                        inputEl = document.createElement('input');
+                        inputEl.type = 'text';
+                        inputEl.className = 'form-control';
+                        inputEl.id = `add_${field.id}`;
+                    }
+
+                    groupDiv.appendChild(inputEl);
+                    bodyDiv.appendChild(groupDiv);
+                });
+
+                itemDiv.appendChild(headerDiv);
+                itemDiv.appendChild(bodyDiv);
+                container.appendChild(itemDiv);
+            });
+        }
+
         function toggleAccordion(groupKey) {
+            const body = document.getElementById(`body-${groupKey}`);
+            const icon = document.getElementById(`icon-${groupKey}`);
+            if (body.style.display === 'none') {
+                body.style.display = 'grid';
+                icon.className = 'fa-solid fa-chevron-up';
+            } else {
+                body.style.display = 'none';
+                icon.className = 'fa-solid fa-chevron-down';
+            }
+        }
+
+        function toggleAddAccordion(groupKey) {
             const body = document.getElementById(`body-${groupKey}`);
             const icon = document.getElementById(`icon-${groupKey}`);
             if (body.style.display === 'none') {
@@ -1275,12 +1417,10 @@
             const email = document.getElementById('teacherEmail').value.trim();
             const pass = document.getElementById('teacherPassword').value.trim();
 
-            const savedSettings = {
-                teacherName: document.getElementById('settingTeacherName').value || "Nguyễn Thị Thu Thảo"
-            };
+            const teacherName = document.getElementById('settingTeacherName').value.trim() || "Nguyễn Thị Thu Thảo";
 
             if (email && pass) {
-                currentUser = { role: 'teacher', name: savedSettings.teacherName };
+                currentUser = { role: 'teacher', name: teacherName };
                 showToast("Đăng nhập Giáo viên thành công!", "success");
                 enterDashboard();
                 loadTeacherDashboardRealtime();
@@ -1311,6 +1451,7 @@
             document.getElementById('loginSection').style.display = 'flex';
             document.getElementById('parentCardView').style.display = 'none';
             closeEditModal();
+            closeAddStudentModal();
             showToast("Đã đăng xuất khỏi hệ thống.", "info");
         }
 
@@ -1335,6 +1476,19 @@
                     ...doc.data(),
                     _docId: doc.id
                 }));
+
+                // Sắp xếp danh sách học sinh theo Cột 16 (f001: Thứ tự)
+                allStudentsList.sort((a, b) => {
+                    const orderA = Number(a.f001);
+                    const orderB = Number(b.f001);
+                    const isValA = !isNaN(orderA) && a.f001 !== '' && a.f001 !== null && a.f001 !== undefined;
+                    const isValB = !isNaN(orderB) && b.f001 !== '' && b.f001 !== null && b.f001 !== undefined;
+
+                    if (isValA && isValB) return orderA - orderB;
+                    if (isValA && !isValB) return -1;
+                    if (!isValA && isValB) return 1;
+                    return 0;
+                });
 
                 renderTeacherStudentTable();
                 populateStudentDropdownSelect();
@@ -1375,6 +1529,9 @@
                     <td>
                         <button class="btn btn-sm btn-primary" onclick='openEditModalByCode("${s.f002 || s._docId}")'>
                             <i class="fa-solid fa-pen-to-square"></i> Sửa
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick='deleteStudentByCode("${s.f002 || s._docId}", "${s.f003}")'>
+                            <i class="fa-solid fa-trash"></i> Xóa
                         </button>
                     </td>
                 `;
@@ -1429,7 +1586,68 @@
         }
 
         // =========================================================
-        // 5. FORM EDIT & SAVE LOGIC
+        // 5. THÊM & XÓA HỌC SINH (CHỨC NĂNG MỚI)
+        // =========================================================
+
+        function openAddStudentModal() {
+            PARENT_EXCEL_SCHEMA.forEach(field => {
+                const el = document.getElementById(`add_${field.id}`);
+                if (el) el.value = '';
+            });
+            document.getElementById('addStudentModal').style.display = 'flex';
+        }
+
+        function closeAddStudentModal() {
+            document.getElementById('addStudentModal').style.display = 'none';
+        }
+
+        async function saveNewStudentData() {
+            const newStudentObj = {};
+            PARENT_EXCEL_SCHEMA.forEach(field => {
+                const el = document.getElementById(`add_${field.id}`);
+                if (el) {
+                    newStudentObj[field.id] = el.value.trim();
+                }
+            });
+
+            const docId = String(newStudentObj.f002 || newStudentObj.f043 || "").trim();
+            if (!docId) {
+                showToast("Vui lòng nhập Mã định danh Bộ GD&ĐT hoặc Số CCCD để làm định danh học sinh!", "error");
+                return;
+            }
+
+            if (!newStudentObj.f003) {
+                showToast("Vui lòng nhập Họ và tên học sinh!", "warning");
+                return;
+            }
+
+            newStudentObj._status = 'PENDING';
+            newStudentObj._modifiedFields = [];
+
+            try {
+                await db.collection("students").doc(docId).set(newStudentObj, { merge: true });
+                showToast("Đã thêm học sinh mới thành công vào hệ thống!", "success");
+                closeAddStudentModal();
+            } catch (err) {
+                console.error("Add student error:", err);
+                showToast("Không thể thêm học sinh mới lên Cloud Firestore!", "error");
+            }
+        }
+
+        async function deleteStudentByCode(docId, studentName) {
+            if (!confirm(`Bạn có chắc chắn muốn xóa học sinh "${studentName}" (${docId}) khỏi hệ thống không?`)) return;
+
+            try {
+                await db.collection("students").doc(docId).delete();
+                showToast(`Đã xóa học sinh ${studentName} thành công!`, "success");
+            } catch (err) {
+                console.error("Delete student error:", err);
+                showToast("Không thể xóa học sinh khỏi Cloud Firestore!", "error");
+            }
+        }
+
+        // =========================================================
+        // 6. FORM EDIT & SAVE LOGIC
         // =========================================================
 
         function openEditModal(studentObj) {
@@ -1626,7 +1844,7 @@
         }
 
         // =========================================================
-        // 6. EXCEL IMPORT / EXPORT (EXCELJS FORMATTING)
+        // 7. EXCEL IMPORT / EXPORT
         // =========================================================
 
         function triggerImportExcel() {
@@ -1734,141 +1952,80 @@
         async function exportDataToExcel() {
             try {
                 const snapshot = await db.collection("students").get();
-                const studentsList = snapshot.docs.map(doc => doc.data());
+                let studentsList = snapshot.docs.map(doc => doc.data());
 
                 if (studentsList.length === 0) {
                     showToast("Không có dữ liệu trên Firestore để xuất Excel!", "warning");
                     return;
                 }
 
+                // Sắp xếp danh sách trước khi xuất Excel theo Cột 16
+                studentsList.sort((a, b) => {
+                    const orderA = Number(a.f001);
+                    const orderB = Number(b.f001);
+                    const isValA = !isNaN(orderA) && a.f001 !== '' && a.f001 !== null && a.f001 !== undefined;
+                    const isValB = !isNaN(orderB) && b.f001 !== '' && b.f001 !== null && b.f001 !== undefined;
+
+                    if (isValA && isValB) return orderA - orderB;
+                    if (isValA && !isValB) return -1;
+                    if (!isValA && isValB) return 1;
+                    return 0;
+                });
+
                 const workbook = new ExcelJS.Workbook();
                 const worksheet = workbook.addWorksheet('DanhSachHocSinh');
 
-                // 1. Tạo hàng Tiêu đề
                 const headers = PARENT_EXCEL_SCHEMA.map(item => item.excelHeader);
                 const headerRow = worksheet.addRow(headers);
 
-                // Định dạng hàng Tiêu đề
                 PARENT_EXCEL_SCHEMA.forEach((item, index) => {
                     const cell = headerRow.getCell(index + 1);
-
-                    cell.font = {
-                        name: 'Times New Roman',
-                        size: 11,
-                        bold: true
-                    };
-
-                    cell.alignment = {
-                        vertical: 'middle',
-                        horizontal: 'center',
-                        wrapText: true
-                    };
-
+                    cell.font = { name: 'Times New Roman', size: 11, bold: true };
+                    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
                     cell.border = {
-                        top: { style: 'thin' },
-                        left: { style: 'thin' },
-                        bottom: { style: 'thin' },
-                        right: { style: 'thin' }
+                        top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' }
                     };
-
                     let colorArgb = 'F2F2F2';
-                    if (item.permission === 'PH-NHAP') {
-                        colorArgb = 'D9EAD3';
-                    } else if (item.permission === 'PH-DROPDOWN') {
-                        colorArgb = 'FFF2CC';
-                    } else if (item.permission === 'PH-CHECKBOX') {
-                        colorArgb = 'D0E0E3';
-                    }
+                    if (item.permission === 'PH-NHAP') colorArgb = 'D9EAD3';
+                    else if (item.permission === 'PH-DROPDOWN') colorArgb = 'FFF2CC';
+                    else if (item.permission === 'PH-CHECKBOX') colorArgb = 'D0E0E3';
 
-                    cell.fill = {
-                        type: 'pattern',
-                        pattern: 'solid',
-                        fgColor: { argb: colorArgb }
-                    };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorArgb } };
                 });
 
-                // 2. Tạo và Định dạng các Dòng Dữ liệu
-                studentsList.forEach(s => {
-                    const rowValues = PARENT_EXCEL_SCHEMA.map(item => {
-                        let val = s[item.id] !== undefined ? s[item.id] : '';
-                        if (item.inputType === 'date') {
-                            val = normalizeDateForUser(val);
-                        }
-                        return val;
-                    });
-
-                    const row = worksheet.addRow(rowValues);
-
-                    PARENT_EXCEL_SCHEMA.forEach((item, colIdx) => {
-                        const cell = row.getCell(colIdx + 1);
-
-                        cell.font = {
-                            name: 'Times New Roman',
-                            size: 11
-                        };
-
-                        cell.alignment = {
-                            vertical: 'middle',
-                            horizontal: 'left',
-                            wrapText: true
-                        };
-
-                        cell.border = {
-                            top: { style: 'thin' },
-                            left: { style: 'thin' },
-                            bottom: { style: 'thin' },
-                            right: { style: 'thin' }
-                        };
-
-                        let colorArgb = 'F2F2F2';
-                        if (item.permission === 'PH-NHAP') {
-                            colorArgb = 'D9EAD3';
-                        } else if (item.permission === 'PH-DROPDOWN') {
-                            colorArgb = 'FFF2CC';
-                        } else if (item.permission === 'PH-CHECKBOX') {
-                            colorArgb = 'D0E0E3';
-                        }
-
-                        cell.fill = {
-                            type: 'pattern',
-                            pattern: 'solid',
-                            fgColor: { argb: colorArgb }
-                        };
-
-                        if (item.inputType === 'date') {
-                            cell.numFmt = 'dd/mm/yyyy';
-                        }
-                    });
+                studentsList.forEach(student => {
+                    const rowData = PARENT_EXCEL_SCHEMA.map(item => student[item.id] !== undefined ? student[item.id] : '');
+                    const row = worksheet.addRow(rowData);
+                    row.font = { name: 'Times New Roman', size: 11 };
+                    row.alignment = { vertical: 'middle', horizontal: 'left' };
                 });
 
-                // 3. Tạo Tải xuống File Excel
                 const buffer = await workbook.xlsx.writeBuffer();
                 const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `Danh_Sach_Hoc_Sinh_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                a.download = `Danh_Sach_Ho_So_Hoc_Sinh_${document.getElementById('settingClassName').value || '5.11'}.xlsx`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
-
-                showToast("Tải file Excel thành công!", "success");
+                showToast("Xuất File Excel thành công!", "success");
             } catch (err) {
-                console.error("Export Excel Error:", err);
-                showToast("Lỗi khi xuất file Excel!", "error");
+                console.error(err);
+                showToast("Lỗi khi xuất File Excel!", "error");
             }
         }
 
         // =========================================================
-        // 7. AUDIT LOGS REALTIME & RENDER
+        // 8. AUDIT LOGS REALTIME
         // =========================================================
-
         function listenToAuditLogsRealtime() {
-            db.collection("auditLogs").orderBy("timestamp", "desc").limit(100).onSnapshot(snapshot => {
+            if (logsUnsubscribe) logsUnsubscribe();
+            logsUnsubscribe = db.collection("auditLogs").orderBy("timestamp", "desc").onSnapshot(snapshot => {
                 currentAuditLogsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderHistoryLogs();
-            }, err => console.error("Error audit logs:", err));
+            }, err => console.error("Audit logs error:", err));
         }
 
         function renderHistoryLogs() {
@@ -1876,29 +2033,75 @@
             if (!tbody) return;
             tbody.innerHTML = '';
 
-            const search = (document.getElementById('historySearchInput')?.value || '').toLowerCase();
-            const studentFilter = document.getElementById('historyStudentFilter')?.value || '';
+            const searchKey = (document.getElementById('historySearchInput').value || "").toLowerCase();
+            const filterStudent = document.getElementById('historyStudentFilter') ? document.getElementById('historyStudentFilter').value : "";
+            const fromDateStr = document.getElementById('historyFromDate').value.trim();
+            const toDateStr = document.getElementById('historyToDate').value.trim();
+
+            const fromDateObj = fromDateStr ? parseDDMMYYYYToDate(fromDateStr) : null;
+            const toDateObj = toDateStr ? parseDDMMYYYYToDate(toDateStr) : null;
 
             let filtered = currentAuditLogsList.filter(log => {
-                if (studentFilter && log.studentCode !== studentFilter) return false;
-                if (search) {
-                    const str = `${log.studentName} ${log.studentCode} ${log.fieldName} ${log.oldValue} ${log.newValue}`.toLowerCase();
-                    if (!str.includes(search)) return false;
+                let timeStr = "";
+                if (log.timestamp && log.timestamp.toDate) {
+                    timeStr = log.timestamp.toDate().toLocaleString('vi-VN');
+                } else {
+                    timeStr = log.time || "";
                 }
+
+                if (filterStudent && log.studentCode !== filterStudent) return false;
+
+                if (searchKey) {
+                    const match = (
+                        (log.studentName && log.studentName.toLowerCase().includes(searchKey)) ||
+                        (log.studentCode && log.studentCode.toLowerCase().includes(searchKey)) ||
+                        (log.fieldName && log.fieldName.toLowerCase().includes(searchKey)) ||
+                        (log.updatedBy && log.updatedBy.toLowerCase().includes(searchKey))
+                    );
+                    if (!match) return false;
+                }
+
+                if (fromDateObj || toDateObj) {
+                    let logDateOnly = null;
+                    if (log.timestamp && log.timestamp.toDate) {
+                        const d = log.timestamp.toDate();
+                        logDateOnly = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+                    } else if (log.time) {
+                        const parts = log.time.split(' ')[0].split('/');
+                        if (parts.length === 3) {
+                            logDateOnly = new Date(Date.UTC(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])));
+                        }
+                    }
+
+                    if (logDateOnly) {
+                        if (fromDateObj && logDateOnly < fromDateObj) return false;
+                        if (toDateObj && logDateOnly > toDateObj) return false;
+                    }
+                }
+
                 return true;
             });
 
             filtered.forEach(log => {
+                let timeFormatted = "";
+                if (log.timestamp && log.timestamp.toDate) {
+                    timeFormatted = log.timestamp.toDate().toLocaleString('vi-VN');
+                } else {
+                    timeFormatted = log.time || "";
+                }
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${log.time || ''}</td>
-                    <td>${log.studentName || ''} (${log.studentCode || ''})</td>
-                    <td>${log.fieldName || ''}</td>
-                    <td>${log.oldValue || ''}</td>
-                    <td>${log.newValue || ''}</td>
-                    <td>${log.updatedBy || ''}</td>
+                    <td>${timeFormatted}</td>
+                    <td><strong>${log.studentName || '---'}</strong> (${log.studentCode || ''})</td>
+                    <td><span class="badge badge-primary">${log.fieldName || '---'}</span></td>
+                    <td><del class="text-danger">${log.oldValue || '(Trống)'}</del></td>
+                    <td><ins style="color:var(--success-color); font-weight:600;">${log.newValue || '(Trống)'}</ins></td>
+                    <td><span class="badge badge-info">${log.updatedBy || '---'}</span></td>
                     <td class="teacher-only" style="display: ${currentUser && currentUser.role === 'teacher' ? '' : 'none'};">
-                        <button class="btn btn-sm btn-danger" onclick="deleteAuditLog('${log.id}')"><i class="fa-solid fa-trash"></i></button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteAuditLog('${log.id}')">
+                            <i class="fa-solid fa-trash"></i> Xóa
+                        </button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -1906,23 +2109,12 @@
         }
 
         async function deleteAuditLog(logId) {
-            if (!confirm("Xóa nhật ký này?")) return;
+            if (!confirm("Bạn có chắc muốn xóa dòng nhật ký này không?")) return;
             try {
                 await db.collection("auditLogs").doc(logId).delete();
-                showToast("Đã xóa nhật ký!", "info");
+                showToast("Đã xóa nhật ký thay đổi!", "success");
             } catch (err) {
-                showToast("Lỗi khi xóa nhật ký!", "error");
-            }
-        }
-
-        function previewAvatar(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    document.getElementById('settingAvatarPreview').src = evt.target.result;
-                };
-                reader.readAsDataURL(file);
+                showToast("Không thể xóa nhật ký!", "error");
             }
         }
     </script>
